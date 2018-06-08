@@ -8,6 +8,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE DataKinds #-}
 module Data.Type.Vector
   ( Vec
   , pattern VNil
