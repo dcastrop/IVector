@@ -1,11 +1,13 @@
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE GADTs #-}
 module Data.Type.Vector
   ( Vec
   , pattern VNil
@@ -16,45 +18,47 @@ module Data.Type.Vector
   ) where
 
 import Data.Type.Mod
-import Data.Type.Natural
+import Data.Singletons.Prelude
+import Data.Singletons.TypeLits
+
 import Data.Typeable
 
 newtype Vec (n :: Nat) a = Vec [a]
 
-instance Show (Vec 'Z a) where
-  show _ = "[]"
+instance Show a => Show (Vec n a) where
+  show (Vec xs) = show xs
 
 deriving instance Typeable n => Typeable (Vec n)
 
 instance Functor (Vec n) where
   fmap f (Vec xs) = Vec (fmap f xs)
 
-vnil :: Vec 'Z a
+vnil :: Vec 0 a
 vnil = Vec []
 
-vcons :: a -> Vec n a -> Vec ('S n) a
+vcons :: a -> Vec n a -> Vec (1 + n) a
 vcons x (Vec xs) = Vec (x : xs)
 
-outV :: Vec ('S n) a -> (a, Vec n a)
+outV :: Vec (1+n) a -> (a, Vec n a)
 outV (Vec (x : xs)) = (x, Vec xs)
 
 {-# COMPLETE VNil, VCons #-}
-pattern VNil :: Vec 'Z a
-pattern VCons :: a -> Vec n a -> Vec ('S n) a
+pattern VNil :: Vec 0 a
+pattern VCons :: a -> Vec n a -> Vec (1 + n) a
 
 pattern VNil = Vec []
 pattern VCons x xs <- (outV -> (x, xs)) where
   VCons x xs = vcons x xs
 
-vec :: forall n a b. SNat n -> (Mod n -> a -> b) -> a -> Vec n b
+vec :: forall n a b. SNat n -> (TMod n -> a -> b) -> a -> Vec n b
 vec n f x = Vec $ mapLL [] $ enum n
   where
-    mapLL :: [b] -> [Mod n] -> [b]
-    mapLL acc [] = acc
+    mapLL :: [b] -> [TMod n] -> [b]
+    mapLL acc [] = reverse acc
     mapLL acc (l : r) = mapLL (f l x : acc) r
 
 len :: forall n a. SingI n => Vec n a -> SNat n
 len _ = sing
 
-proj :: forall m a. SingI m => Mod ('S m) -> Vec ('S m) a -> a
+proj :: forall m a. KnownNat m => TMod m -> Vec m a -> a
 proj n (Vec l) = l !! fromEnum n
