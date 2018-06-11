@@ -8,6 +8,7 @@ module Data.Type.Mod
   ( TMod
   , enum
   , modVal
+  , extendMod
   ) where
 
 import Data.Singletons
@@ -51,6 +52,11 @@ prodMod (TMod a _) (TMod b _) = withKnownNat ab $ TMod ab (unsafeCoerce Refl)
 
 modVal :: TMod n -> SomeSing Nat
 modVal (TMod n _) = SomeSing n
+
+extendMod :: forall m n. (KnownNat n, KnownNat m) => TMod n -> TMod (m + n)
+extendMod (TMod a _) = withKnownNat mn $ TMod a (unsafeCoerce Refl)
+  where
+    mn = (sing :: SNat m) %+ (sing :: SNat n)
 
 instance KnownNat n => Num (TMod n) where
   (+) = plusMod
