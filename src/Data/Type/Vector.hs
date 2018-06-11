@@ -16,9 +16,11 @@ module Data.Type.Vector
   , vec
   , len
   , proj
+  , enum
   ) where
 
-import Data.Type.Mod
+import Data.Type.Mod hiding ( enum )
+import qualified Data.Type.Mod as Mod
 import Data.Singletons.Prelude
 import Data.Singletons.TypeLits
 
@@ -52,7 +54,7 @@ pattern VCons x xs <- (outV -> (x, xs)) where
   VCons x xs = vcons x xs
 
 vec :: forall n a b. SNat n -> (TMod n -> a -> b) -> a -> Vec n b
-vec n f x = Vec $ mapLL [] $ enum n
+vec n f x = Vec $ mapLL [] $ Mod.enum n
   where
     mapLL :: [b] -> [TMod n] -> [b]
     mapLL acc [] = reverse acc
@@ -63,3 +65,8 @@ len _ = sing
 
 proj :: forall m a. KnownNat m => TMod m -> Vec m a -> a
 proj n (Vec l) = l !! fromEnum n
+
+enum :: forall m. SNat m -> Vec m (TMod m)
+enum n = Vec xs
+  where
+    xs = Mod.enum n
