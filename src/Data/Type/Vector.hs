@@ -17,7 +17,11 @@ module Data.Type.Vector
   , len
   , proj
   , enum
+  , foldr
   ) where
+
+import Prelude hiding ( foldr )
+import qualified Prelude
 
 import Data.Type.Mod hiding ( enum )
 import qualified Data.Type.Mod as Mod
@@ -70,3 +74,6 @@ enum :: forall m. SNat m -> Vec m (TMod m)
 enum n = Vec xs
   where
     xs = Mod.enum n
+
+foldr :: (a -> b -> b) -> b -> Vec x a -> b
+foldr f x (Vec xs) = Prelude.foldr f x xs
