@@ -13,6 +13,7 @@ module Data.Type.Mod
   , weakenMod
   , splitMod
   , subMod
+  , extMod
   ) where
 
 import Data.Singletons
@@ -29,13 +30,6 @@ data TMod (n :: Nat)
 
 plusMod :: forall n. TMod n -> TMod n -> TMod n
 plusMod (TMod (a :: SNat a) _) (TMod (b :: SNat b) _)
-  = withKnownNat ab $ TMod ab (unsafeCoerce Refl)
-  where
-    ab :: SNat (a + b `Mod` n)
-    ab = (a %+ b) `sMod` (sing :: SNat n)
-
-multMod :: forall n. TMod n -> TMod n -> TMod n
-multMod (TMod (a :: SNat a) _) (TMod (b :: SNat b) _)
   = withKnownNat ab $ TMod ab (unsafeCoerce Refl)
   where
     ab :: SNat (a + b `Mod` n)
@@ -77,6 +71,11 @@ subMod (TMod nm _) m = withKnownNat n $ TMod n (unsafeCoerce Refl)
   where
     n = nm %- m
 
+extMod :: forall m n. (KnownNat n, KnownNat m) => TMod n -> TMod m -> TMod (n * m)
+extMod (TMod c _) (TMod nm _) = withKnownNat (n %* nm %+ c) $
+  TMod (n %* nm %+ c) (unsafeCoerce Refl)
+  where
+    n = sing :: SNat n
 
 
 instance KnownNat n => Num (TMod n) where
