@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fplugin GHC.TypeLits.Normalise #-}
+{-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE GADTs #-}
@@ -8,7 +10,9 @@ module Data.Type.Mod
   ( TMod
   , enum
   , modVal
-  , extendMod
+  , weakenMod
+  , splitMod
+  , subMod
   ) where
 
 import Data.Singletons
@@ -53,10 +57,27 @@ prodMod (TMod a _) (TMod b _) = withKnownNat ab $ TMod ab (unsafeCoerce Refl)
 modVal :: TMod n -> SomeSing Nat
 modVal (TMod n _) = SomeSing n
 
-extendMod :: forall m n. (KnownNat n, KnownNat m) => TMod n -> TMod (m + n)
-extendMod (TMod a _) = withKnownNat mn $ TMod a (unsafeCoerce Refl)
+weakenMod :: forall m n. (KnownNat n, KnownNat m) => TMod n -> TMod (m + n)
+weakenMod (TMod a _) = withKnownNat mn $ TMod a (unsafeCoerce Refl)
   where
     mn = (sing :: SNat m) %+ (sing :: SNat n)
+
+
+splitMod :: forall m n. (KnownNat n, KnownNat m)
+         => TMod (n + m) -> Either (TMod n) (TMod m)
+splitMod (TMod nm _)
+  = if natVal nm < natVal (sing :: SNat n) then Left (TMod nm (unsafeCoerce Refl))
+    else Right tm
+  where
+    tm = withKnownNat m (TMod m (unsafeCoerce Refl))
+    m = (nm %- (sing :: SNat n))
+
+subMod :: forall m n. (KnownNat n, KnownNat m) => TMod (n+m) -> SNat m -> TMod n
+subMod (TMod nm _) m = withKnownNat n $ TMod n (unsafeCoerce Refl)
+  where
+    n = nm %- m
+
+
 
 instance KnownNat n => Num (TMod n) where
   (+) = plusMod
