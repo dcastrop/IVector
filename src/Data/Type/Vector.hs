@@ -57,9 +57,10 @@ pattern VNil = Vec []
 pattern VCons x xs <- (outV -> (x, xs)) where
   VCons x xs = vcons x xs
 
-vec :: forall n a b. SNat n -> (TMod n -> a -> b) -> a -> Vec n b
-vec n f x = Vec $ mapLL [] $ Mod.enum n
+vec :: forall n a b. KnownNat n => (TMod n -> a -> b) -> a -> Vec n b
+vec f x = Vec $ mapLL [] $ Mod.enum n
   where
+    n = sing :: SNat n
     mapLL :: [b] -> [TMod n] -> [b]
     mapLL acc [] = reverse acc
     mapLL acc (l : r) = mapLL (f l x : acc) r
